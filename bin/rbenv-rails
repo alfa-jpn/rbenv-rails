@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+#
+# create new rails project in the version.
+#
+# @usage:
+#   rbenv rails <project_name> <rails_version>
+#
+# @example:
+#   rbenv rails nyaruko_project 4.0.0
+#
+
+[ -n "$RBENV_DEBUG" ] && set -x
+set -u
+
+# set current directory.
+current_dir=`pwd`
+
+# $1: error_message.
+function exception(){
+  clean_working_directory
+  echo >&2 "aborted."
+  echo >&2 $1
+  exit 1;
+}
+
+# clean working directory.
+function clean_working_directory(){
+  echo "clean working directory $current_dir"
+  rm_gemfile="$current_dir/Gemfile*"
+  rm_bundle_dir="$current_dir/.bundle"
+  rm_vendor_dir="$current_dir/vendor"
+
+  echo "remove $rm_gemfile"
+  rm -f  $rm_gemfile
+  echo "remove $rm_bundle_dir"
+  rm -rf $rm_bundle_dir
+  echo "remove $rm_vendor_dir"
+  rm -rf $rm_vendor_dir
+}
+
+# check bundler
+command -v bundle > /dev/null 2>&1 || { exception "bundle is required. exec next command `rbenv exec gem install bundler`"; }
+
+# check params
+if [ $# -ne 2 ]; then
+  exception "usage: create_rails.sh {project_name} [rails_version]"
+fi
+
+# set params
+app_name=$1
+rails_version=$2
+rails_gemfile="gem \"rails\", \"$rails_version\""
+rails_project_dir="$current_dir/$app_name"
+project_gitignore="$rails_project_dir/.gitignore"
+
+# exec
+bundle init || { exception "faild bundle init."; }
+echo $rails_gemfile >> Gemfile
+
+# install rails in ./vendor/bundle
+bundle install --path vendor/bundle || {  exception "faild rails install."; }
+
+# create rails project with local rails
+bundle exec rails new $app_name --skip-bundle || { exception "faild create project."; }
+
+# install gems in #{rails_project_dir}/vendor/bundle
+( cd $rails_project_dir; bundle install --path vendor/bundle || { exit 1; } ) || { exception "faild gem install"; }
+
+# add vendor to gitignore
+echo "write $project_gitignore"
+echo "vendor/bundle" >> $project_gitignore
+
+# clean working directory
+clean_working_directory
+
+echo "finish!!"
+exit 0
+
