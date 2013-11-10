@@ -17,7 +17,8 @@ rbenv rails example_project 4.0.0
 ``` sh
 git clone https://github.com/alfa-jpn/rbenv-rails.git ~/.rbenv/plugins/rbenv-rails
 ```
-and
-``` sh
-git rehash
-```
+
+# require
+- bash
+- [rbenv](https://github.com/sstephenson/rbenv)
+- bundler -> `rbenv exec gem install bundler` and `rbenv rehash`
